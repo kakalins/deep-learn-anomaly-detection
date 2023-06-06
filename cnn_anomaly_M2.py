@@ -68,27 +68,39 @@ x_valid = x_valid / 255
 print(x_train.min(), x_train.max())
 print(x_valid.min(), x_valid.max())
 
+# Model Callback to save the model
+checkpoint_filepath = 'data\\models\\m2\\'
+my_callback = [
+    keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath + 'm2_model.{epoch: 02d}--{val_loss: .2f}.h5', monitor = "val_loss", save_best_only = True)
+]
+
 model = Sequential()
 
-model.add(Conv2D(4, (3, 3), strides=1, padding="same", activation="relu", 
+model.add(Conv2D(64, (3, 3), strides=1, padding="same", activation="relu", 
                  input_shape=(99, 151, 1)))
-model.add(BatchNormalization())
+#model.add(BatchNormalization())
 model.add(MaxPool2D((2, 2), strides=2, padding="same"))
-model.add(Conv2D(8, (3, 3), strides=1, padding="same", activation="relu"))
-model.add(Dropout(0.2))
-model.add(BatchNormalization())
+model.add(Conv2D(32, (3, 3), strides=1, padding="same", activation="relu"))
+#model.add(Dropout(0.2))
+#model.add(BatchNormalization())
 model.add(MaxPool2D((2, 2), strides=2, padding="same"))
-model.add(Conv2D(16, (3, 3), strides=1, padding="same", activation="relu"))
-model.add(BatchNormalization())
-model.add(MaxPool2D((2, 2), strides=2, padding="same"))
+#model.add(Conv2D(16, (3, 3), strides=1, padding="same", activation="relu"))
+#model.add(BatchNormalization())
+#model.add(MaxPool2D((2, 2), strides=2, padding="same"))
 model.add(Flatten())
-model.add(Dense(units=16, activation="relu"))
+model.add(Dense(units=64, activation="relu"))
 model.add(Dropout(0.3))
+model.add(Dense(units=128, activation="relu"))
 model.add(Dense(units=num_classes, activation="softmax"))
 
 model.summary()
 
 
-model.compile(loss="categorical_crossentropy", metrics=["accuracy"])
+model.compile(optimizer='adam', loss="categorical_crossentropy", metrics=['accuracy'])
 
-model.fit(x_train, y_train, epochs=10, verbose=1, validation_data=(x_valid, y_valid))
+hist = model.fit(x_train, y_train, batch_size = 5, epochs = 100, verbose=1, validation_data=(x_valid, y_valid), callbacks=my_callback)
+#plt.plot(hist.history['loss'], color = 'b', label='loss')
+#plt.plot(hist.history['val_loss'], color = 'r', label='validation_loss')
+#plt.legend()
+#plt.xlabel = 'Epochs'
+#plt.show()
