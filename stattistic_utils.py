@@ -1,8 +1,27 @@
 import numpy as np
+import pandas as pd
 from sklearn.metrics import confusion_matrix, confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, roc_curve, RocCurveDisplay
 
 class Statistics:
 
+    def get_confusion_matrix(y_truth, y_pred):
+        tp = 0
+        tn = 0
+        fp = 0
+        fn = 0
+
+        for i, value in enumerate(y_truth):
+            if value == y_pred[i]:
+                if value == 1:
+                    tn += 1     # True negatives
+                else:
+                    tp += 1     # True positives
+            else:
+                if value == 1:
+                    fn += 1
+                else:
+                    fp += 1
+        return (tp, fp, tn, fn)
     # Receives the y_true (ground truth values) and y_pred (model predicted values) and returns accuracy, balanced accuracy, specificity, precision and balanced accuracy
     def calc_metrics(self,y_true, y_pred):
         accuracy = 0.
@@ -12,14 +31,16 @@ class Statistics:
         balanced_accuracy = 0.
 
         confusion_m = confusion_matrix(y_true, y_pred)
-        #print(confusion_m)
+        print(confusion_m)
     
         (tn, fp, fn, tp) = confusion_m.ravel()
+        #(tp, fp, tn, fn) = self.get_confusion_matrix(y_true, y_pred)
         accuracy = float(tp + tn) / (tp + tn + fp + fn)
         sensibility = float(tp) / (tp + fn)
         precision = float(tp) / (tp + fp)
         specificity = float(tn) / (tn + fp)
-        if (sensibility == 0 and precision == 0):
+
+        if (sensibility == 0 or precision == 0):
             f1_score = 0.
         else:
             f1_score = 2 * (sensibility * precision) / (sensibility + precision)
@@ -53,5 +74,10 @@ class Statistics:
         auc = roc_auc_score(y_true, y_pred)
         RocCurveDisplay.from_predictions(y_true, y_pred, pos_label=1)
         return (fpr, tpr, thresholds, auc)
+    
+    def save_metrics(self, metrics, path, name):
+        df = pd.DataFrame([metrics])
+        df.to_csv(path + name + ".csv")
+
 
     

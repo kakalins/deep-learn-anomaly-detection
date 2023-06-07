@@ -28,12 +28,12 @@ def parse_prediction(y_pred, threshold):
     return y_out
 
 # Carregar as imagens e organizá-las em um tensor
-train_normal = load_images('data/images/validation/M1/normal/M1N5/')
-train_normal = np.append(train_normal, load_images('data/images/validation/M1/normal/M1N6/'), axis=0)
-train_anomaly = load_images('data/images/validation/M1/anomaly/M1A3/')
-train_anomaly = np.append(train_anomaly, load_images('data/images/validation/M1/anomaly/M1A4/'), axis=0)
-valid_normal = load_images('data/images/test/M1/normal/M1N4/')
-valid_anomaly = load_images('data/images/test/M1/anomaly/M1A2/')
+train_normal = load_images('data/images/validation/M3/normal/M3N2/')
+train_normal = np.append(train_normal, load_images('data/images/validation/M3/normal/M3N3/'), axis=0)
+train_anomaly = load_images('data/images/validation/M3/anomaly/M3A1/')
+train_anomaly = np.append(train_anomaly, load_images('data/images/validation/M3/anomaly/M3A2/'), axis=0)
+valid_normal = load_images('data/images/test/M3/normal/M3N4/')
+valid_anomaly = load_images('data/images/test/M3/anomaly/M3A3/')
 
 # verificando a forma do tensor
 train_normal = train_normal.T
@@ -73,17 +73,10 @@ print(x_train.min(), x_train.max())
 print(x_valid.min(), x_valid.max())
 
 # Model Callback to save the model
-checkpoint_filepath = 'data\\models\\lstm\\m1\\'
+checkpoint_filepath = 'data\\models\\lstm\\m2\\'
 my_callback = [
-    keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath + 'm1_model.h5', monitor = "val_loss", save_best_only = True)
+    keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath + 'm2_model.h5', monitor = "val_loss", save_best_only = True)
 ]
-
-""" #Importing the data
-(x_train, y_train),(x_test, y_test) = mnist.load_data() 
-
-#Normalizing the data
-x_train = x_train.astype('float32') / 255.0
-x_test = x_test.astype('float32') / 255.0 """
 
 # Create a model in Tensorflow for an LSTM
 model = keras.Sequential()
@@ -92,7 +85,7 @@ model.add(layers.Dropout(0.2))
 model.add(layers.LSTM(128))
 model.add(layers.Dense(128, activation='relu'))
 model.add(layers.Dropout(0.2))
-model.add(layers.Dense(32, activation='relu'))
+model.add(layers.Dense(64, activation='relu'))
 model.add(layers.Dense(1, activation='sigmoid'))
 
 # Compiling the model
@@ -107,7 +100,7 @@ print("--"*10)
 print(model.summary())
 print("--"*10)
 
-model.fit(x_train,y_train, batch_size = 5, epochs=10, validation_data = (x_valid, y_valid), callbacks = [my_callback])
+model.fit(x_train,y_train, batch_size = 5, epochs=20, validation_data = (x_valid, y_valid), callbacks = [my_callback])
 
 # Evaluate the model
 models = os.listdir(checkpoint_filepath)
@@ -127,8 +120,3 @@ else:
     metrics = stat.calc_metrics(y_valid, y_prediction)
     stat.print_metrics(metrics)
     stat.save_metrics(metrics, checkpoint_filepath, "result")
-
-
-
-
-
