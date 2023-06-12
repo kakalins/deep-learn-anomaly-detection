@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from PIL import Image
+import matplotlib.pyplot as plt
+import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import (
@@ -11,7 +13,31 @@ from tensorflow.keras.layers import (
     Dropout,
     BatchNormalization,
 )
+from tensorflow.keras.optimizers import Adam
+import keras_tuner as kt
 
+# Function that builds the model with its hyperparameters
+def model_builder(hp):
+    model = Sequential()
+    # Tune the number of units and the kernel size in the convolution layer
+    hp_units = hp.Int('units', min_value = 16, max_value=128, step=16)
+    hp_kernel_size = hp.Int('units', min_value=3, max_value=9, step=2)
+    model.add(Conv2D(hp_units, (hp_kernel_size, hp_kernel_size), strides=1, padding="same", activation="relu", 
+                    input_shape=(99, 151, 1)))
+    
+    model.add(BatchNormalization(trainable = False))
+    model.add(MaxPool2D((2, 2), strides=2, padding="same"))
+    model.add(Conv2D(64, (3, 3), strides=1, padding="same", activation="relu"))
+    model.add(BatchNormalization(trainable = False))
+    model.add(MaxPool2D((2, 2), strides=2, padding="same"))
+    model.add(Flatten())
+    model.add(Dense(units=64, activation="relu"))
+    model.add(Dropout(0.3))
+    model.add(Dense(units=128, activation="relu"))
+    model.add(Dense(units=num_classes, activation="softmax"))
+    opt = Adam(learning_rate = 0.001)
+    model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=['accuracy'])
+    return model
 
 def load_images(image_folder):
     images = []
@@ -22,14 +48,26 @@ def load_images(image_folder):
             images.append(np.array(image))
     return np.array(images)
 
+# Adicionado mecanismo de GPU para treinar mais rápido 
+#tf.debugging.set_log_device_placement(True)
+
 
 # Carregar as imagens e organizá-las em um tensor
-train_normal = load_images('data/images/validation/M2/normal/M2N5/')
-train_normal = np.append(train_normal, load_images('data/images/validation/M2/normal/M2N6/'), axis=0)
-train_anomaly = load_images('data/images/validation/M2/anomaly/M2A3/')
-train_anomaly = np.append(train_anomaly, load_images('data/images/validation/M2/anomaly/M2A4/'), axis=0)
-valid_normal = load_images('data/images/test/M2/normal/M2N4/')
-valid_anomaly = load_images('data/images/test/M2/anomaly/M2A2/')
+system = os.name
+if 'nt' in system:
+    train_normal = load_images('data\\images\\validation\\M2\\normal\\M2N5\\')
+    train_normal = np.append(train_normal, load_images('data\\images\\validation\\M2\\normal\\M2N6\\'), axis=0)
+    train_anomaly = load_images('data\\images\\validation\\M2\\anomaly\\M2A3\\')
+    train_anomaly = np.append(train_anomaly, load_images('data\\images\\validation\\M2\\anomaly\\M2A4\\'), axis=0)
+    valid_normal = load_images('data\\images\\test\\M2\\normal\\M2N4\\')
+    valid_anomaly = load_images('data\\images\\test\\M2\\anomaly\\M2A2\\')
+else:
+    train_normal = load_images('data/images/validation/M2/normal/M2N5/')
+    train_normal = np.append(train_normal, load_images('data/images/validation/M2/normal/M2N6/'), axis=0)
+    train_anomaly = load_images('data/images/validation/M2/anomaly/M2A3/')
+    train_anomaly = np.append(train_anomaly, load_images('data/images/validation/M2/anomaly/M2A4/'), axis=0)
+    valid_normal = load_images('data/images/test/M2/normal/M2N4/')
+    valid_anomaly = load_images('data/images/test/M2/anomaly/M2A2/')
 
 # verificando a forma do tensor
 train_normal = train_normal.T
@@ -71,14 +109,18 @@ print(x_valid.min(), x_valid.max())
 # Model Callback to save the model
 checkpoint_filepath = 'data\\models\\m2\\'
 my_callback = [
-    keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath + 'm2_model.{epoch: 02d}--{val_loss: .2f}.h5', monitor = "val_loss", save_best_only = True)
+    keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath + 'm2_model.h5', monitor = "val_loss", save_best_only = True),
+    tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
 ]
 
-model = Sequential()
+#tuner = kt.Hyperband(model_builder, objective='val_accuracy', max_epochs=10, factor = 3, directory=checkpoint_filepath, project_name='m2_hyper')
+#stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+# Build the model with the optimal hyperparameters and train it on the data for 50 epochs
 
+model = Sequential()
 model.add(Conv2D(64, (3, 3), strides=1, padding="same", activation="relu", 
                  input_shape=(99, 151, 1)))
-#model.add(BatchNormalization())
+model.add(BatchNormalization(trainable = False))
 model.add(MaxPool2D((2, 2), strides=2, padding="same"))
 model.add(Conv2D(32, (3, 3), strides=1, padding="same", activation="relu"))
 #model.add(Dropout(0.2))
@@ -95,12 +137,43 @@ model.add(Dense(units=num_classes, activation="softmax"))
 
 model.summary()
 
+opt = Adam(learning_rate = 0.0001)
+model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=['accuracy'])
 
-model.compile(optimizer='adam', loss="categorical_crossentropy", metrics=['accuracy'])
+#tuner.search(x_train, y_train, batch_size = 5, epochs=10, verbose=1, validation_data=(x_valid, y_valid), callbacks=[stop_early])
+# Get the optimal hyperparameters
+#best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
-hist = model.fit(x_train, y_train, batch_size = 5, epochs = 100, verbose=1, validation_data=(x_valid, y_valid), callbacks=my_callback)
-#plt.plot(hist.history['loss'], color = 'b', label='loss')
-#plt.plot(hist.history['val_loss'], color = 'r', label='validation_loss')
-#plt.legend()
-#plt.xlabel = 'Epochs'
-#plt.show()
+#print(f"""
+#The hyperparameter search is complete. The optimal number of units in the first densely-connected
+#layer is {best_hps.get('units')}.
+#""")
+
+#model = tuner.hypermodel.build(best_hps)
+history = model.fit(x_train, y_train, batch_size = 5, epochs=50, verbose=1, validation_data=(x_valid, y_valid), callbacks=my_callback)
+
+
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+plt.figure(figsize=(8, 8))
+plt.subplot(2, 1, 1)
+plt.plot(acc, label='Training Accuracy')
+plt.plot(val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.ylabel('Accuracy')
+plt.ylim([min(plt.ylim()),1])
+plt.title('Training and Validation Accuracy')
+
+plt.subplot(2, 1, 2)
+plt.plot(loss, label='Training Loss')
+plt.plot(val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.ylabel('Cross Entropy')
+plt.ylim([0,1.0])
+plt.title('Training and Validation Loss')
+plt.xlabel('epoch')
+plt.show()

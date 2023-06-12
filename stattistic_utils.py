@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix, confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, roc_curve, RocCurveDisplay
+import matplotlib.pyplot as plt
 
 class Statistics:
 
@@ -68,11 +69,14 @@ class Statistics:
     def get_confusion_matrix(self, y_true, y_pred):
         print('--'*10 + 'CONFUSION MATRIX' + '--'*10)
         print(confusion_matrix(y_true, y_pred))
+        ConfusionMatrixDisplay.from_predictions(y_true, y_pred)
+        plt.show()
 
     def show_roc_curve(self, y_true, y_pred):
-        fpr, tpr, thresholds = roc_curve(y_true, y_pred, pos_label=1)
+        fpr, tpr, thresholds = roc_curve(y_true, y_pred)
         auc = roc_auc_score(y_true, y_pred)
-        RocCurveDisplay.from_predictions(y_true, y_pred, pos_label=1)
+        RocCurveDisplay.from_predictions(y_true, y_pred)
+        plt.show()
         return (fpr, tpr, thresholds, auc)
     
     def save_metrics(self, metrics, path, name):

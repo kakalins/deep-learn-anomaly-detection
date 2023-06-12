@@ -2,7 +2,9 @@ import os
 import numpy as np
 from PIL import Image
 import tensorflow.keras as keras
+import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential
+from keras.optimizers import Adam
 from tensorflow.keras.layers import (
     Dense,
     Conv2D,
@@ -70,8 +72,9 @@ print(x_valid.min(), x_valid.max())
 # Model Callback to save the model
 checkpoint_filepath = 'data\\models\\m3\\'
 my_callback = [
-    keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath + 'm3_model.{epoch: 02d}--{val_loss: .2f}.h5', monitor = "val_loss", save_best_only = True)
-]
+    keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath + 'm3_model.{epoch: 02d}--{val_loss: .2f}.h5', monitor = "val_loss", save_best_only = True),
+    keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+    ]
 
 model = Sequential()
 
@@ -94,12 +97,33 @@ model.add(Dense(units=num_classes, activation="softmax"))
 
 model.summary()
 
+opt = Adam(learning_rate = 0.0001)
+model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=['accuracy'])
 
-model.compile(optimizer='adam', loss="categorical_crossentropy", metrics=['accuracy'])
+history = model.fit(x_train, y_train, batch_size = 5, epochs=50, verbose=1, validation_data=(x_valid, y_valid), callbacks=my_callback)
 
-hist = model.fit(x_train, y_train, batch_size = 5, epochs = 100, verbose=1, validation_data=(x_valid, y_valid), callbacks=my_callback)
-#plt.plot(hist.history['loss'], color = 'b', label='loss')
-#plt.plot(hist.history['val_loss'], color = 'r', label='validation_loss')
-#plt.legend()
-#plt.xlabel = 'Epochs'
-#plt.show()
+
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+plt.figure(figsize=(8, 8))
+plt.subplot(2, 1, 1)
+plt.plot(acc, label='Training Accuracy')
+plt.plot(val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.ylabel('Accuracy')
+plt.ylim([min(plt.ylim()),1])
+plt.title('Training and Validation Accuracy')
+
+plt.subplot(2, 1, 2)
+plt.plot(loss, label='Training Loss')
+plt.plot(val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.ylabel('Cross Entropy')
+plt.ylim([0,1.0])
+plt.title('Training and Validation Loss')
+plt.xlabel('epoch')
+plt.show()

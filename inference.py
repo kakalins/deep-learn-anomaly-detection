@@ -30,6 +30,8 @@ checkpoint_filepath = 'data\\models\\m1\\'      # Modelo do motor 1
 #checkpoint_filepath = 'data\\models\\m3\\'      # Modelo do motor 3
 #checkpoint_filepath = 'data\\models\\m123\\'      # Modelo para os tres motores juntos
 
+results_filepath = 'data\\results\\'
+
 x_test = None
 y_test = None
 
@@ -146,3 +148,4 @@ metrics = stat.calc_metrics(y_test, y_pred)
 stat.print_metrics(metrics)
 stat.get_confusion_matrix(y_test, y_pred)
 stat.show_roc_curve(y_test, y_pred)
+stat.save_metrics(metrics, results_filepath, "m1")
