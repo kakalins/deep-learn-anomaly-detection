@@ -25,9 +25,9 @@ def load_images(image_folder):
     return np.array(images)
 
 # Path do model checkpoint para baixar o modelo
-checkpoint_filepath = 'data\\models\\m1\\'      # Modelo do motor 1
+#checkpoint_filepath = 'data\\models\\m1\\'      # Modelo do motor 1
 #checkpoint_filepath = 'data\\models\\m2\\'      # Modelo do motor 2
-#checkpoint_filepath = 'data\\models\\m3\\'      # Modelo do motor 3
+checkpoint_filepath = 'data\\models\\m3\\'      # Modelo do motor 3
 #checkpoint_filepath = 'data\\models\\m123\\'      # Modelo para os tres motores juntos
 
 results_filepath = 'data\\results\\'
@@ -148,4 +148,4 @@ metrics = stat.calc_metrics(y_test, y_pred)
 stat.print_metrics(metrics)
 stat.get_confusion_matrix(y_test, y_pred)
 stat.show_roc_curve(y_test, y_pred)
-stat.save_metrics(metrics, results_filepath, "m1")
+stat.save_metrics(metrics, results_filepath, "m3")
